@@ -1,0 +1,27 @@
+,value
+data_dir,artifacts\data
+results_dir,artifacts\results
+asset_tickers,"['VAW', 'VDE', 'VFH', 'VIS', 'VGT', 'VDC', 'VPU', 'VHT', 'VCR', 'VNQ', 'VOX']"
+market_ticker,SPY
+vix_ticker,^VIX
+start_date,2005-01-01
+end_date,2022-01-01
+lookback,60
+initial_cash,100000.0
+reward_eta,0.003968253968253968
+train_years,5
+val_years,1
+test_years,1
+rolling_step_years,1
+train_steps,50000
+ppo_n_envs,10
+ppo_n_steps,756
+ppo_batch_size,1260
+ppo_n_epochs,16
+ppo_gamma,0.9
+ppo_gae_lambda,0.9
+ppo_clip_range,0.25
+ppo_learning_rate,0.0003
+ppo_log_std_init,-1.0
+policy_hidden_sizes,"(64, 64)"
+seed,7
