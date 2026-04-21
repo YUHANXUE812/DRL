@@ -9,6 +9,7 @@ from .config import ExperimentConfig
 from .data import MarketData, build_market_dataset, save_backtest_outputs, slice_by_dates
 from .env import PortfolioEnv, run_policy_backtest
 from .metrics import compute_performance_metrics
+from .ew import run_ew_backtest
 from .mvo import run_mvo_backtest
 from .ppo_agent import model_policy_fn, train_ppo
 
@@ -65,10 +66,18 @@ def run_single_window(
     )
     mvo_metrics = compute_performance_metrics(mvo_nav)
 
+    ew_nav, ew_weights = run_ew_backtest(
+        market_data=test_data,
+        lookback=config.lookback,
+        initial_cash=config.initial_cash,
+    )
+    ew_metrics = compute_performance_metrics(ew_nav)
+
     tag = f"{test_start.year}"
     save_backtest_outputs(output_root / tag / "drl", drl_nav, drl_weights, drl_metrics)
     save_backtest_outputs(output_root / tag / "mvo", mvo_nav, mvo_weights, mvo_metrics)
-    return {"drl": drl_metrics, "mvo": mvo_metrics}
+    save_backtest_outputs(output_root / tag / "ew", ew_nav, ew_weights, ew_metrics)
+    return {"drl": drl_metrics, "mvo": mvo_metrics, "ew": ew_metrics}
 
 
 def run_experiment(config: ExperimentConfig, max_windows: int | None = None, refresh_data: bool = False) -> pd.DataFrame:
