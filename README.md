@@ -4,6 +4,8 @@ This repository is a practical reproduction scaffold for the paper:
 
 `Deep Reinforcement Learning for Optimal Portfolio Allocation: A Comparative Study with Mean-Variance Optimization`
 
+For the current end-to-end reproduction workflow, see [REPRODUCTION_GUIDE.md](REPRODUCTION_GUIDE.md).
+
 The project is designed with the following priority:
 
 1. Run public author code if it becomes available.

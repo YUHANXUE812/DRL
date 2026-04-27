@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -45,7 +46,7 @@ def build_market_dataset(config: ExperimentConfig, refresh: bool = False) -> Mar
     yf_cache_dir.mkdir(parents=True, exist_ok=True)
     yf_cache.set_cache_location(str(yf_cache_dir))
 
-    cache_path = config.data_dir / "market_data.csv"
+    cache_path = config.data_dir / market_data_cache_name(config)
     if cache_path.exists() and not refresh:
         frame = pd.read_csv(cache_path, index_col=0, parse_dates=True)
         return _from_cached_frame(frame, config)
@@ -55,6 +56,13 @@ def build_market_dataset(config: ExperimentConfig, refresh: bool = False) -> Mar
     close = close.ffill().dropna()
     close.to_csv(cache_path)
     return _from_cached_frame(close, config)
+
+
+def market_data_cache_name(config: ExperimentConfig) -> str:
+    universe = config.asset_tickers + [config.market_ticker, config.vix_ticker]
+    fingerprint = "|".join(universe + [config.start_date, config.end_date])
+    digest = hashlib.sha1(fingerprint.encode("utf-8")).hexdigest()[:10]
+    return f"market_data_{digest}.csv"
 
 
 def _from_cached_frame(close: pd.DataFrame, config: ExperimentConfig) -> MarketData:
@@ -108,13 +116,40 @@ def slice_by_dates(
     )
 
 
+def slice_with_lookback(
+    market_data: MarketData,
+    start: pd.Timestamp,
+    end: pd.Timestamp,
+    lookback: int,
+) -> MarketData:
+    index = market_data.prices.index
+    start_idx = max(index.searchsorted(start), 0)
+    end_idx = index.searchsorted(end)
+    begin_idx = max(start_idx - lookback, 0)
+
+    return MarketData(
+        prices=market_data.prices.iloc[begin_idx:end_idx],
+        asset_returns=market_data.asset_returns.iloc[begin_idx:end_idx],
+        features=market_data.features.iloc[begin_idx:end_idx],
+    )
+
+
 def save_backtest_outputs(
     output_dir: Path,
     nav: pd.Series,
     weights: pd.DataFrame,
     metrics: dict[str, float],
+    turnover: pd.Series | None = None,
+    monthly_returns: pd.Series | None = None,
+    annual_returns: pd.Series | None = None,
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     nav.to_csv(output_dir / "nav.csv")
     weights.to_csv(output_dir / "weights.csv")
+    if turnover is not None:
+        turnover.to_csv(output_dir / "turnover.csv")
+    if monthly_returns is not None:
+        monthly_returns.to_csv(output_dir / "monthly_returns.csv")
+    if annual_returns is not None:
+        annual_returns.to_csv(output_dir / "annual_returns.csv")
     pd.Series(metrics, name="value").to_csv(output_dir / "metrics.csv")
